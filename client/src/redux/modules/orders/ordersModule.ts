@@ -1,41 +1,41 @@
 import _ from 'lodash';
 import {createReducer} from '@reduxjs/toolkit';
 import {Order} from 'redux/api/bitmex/types';
-import {createThunkV2} from 'redux/helpers/actionHelpers';
+import {createApiThunk} from 'redux/helpers/actionHelpers';
 import * as types from './types';
 
-export const cancelOrder = createThunkV2({
+export const cancelOrder = createApiThunk({
   actionName: types.CANCEL_ORDER,
   apiMethod: 'orderCancel',
   parseResponse: (data) => ({orderID: data.map(({orderID}) => orderID)}),
 });
 
-export const cancelAllOrders = createThunkV2({
+export const cancelAllOrders = createApiThunk({
   actionName: types.CANCEL_ALL_ORDERS,
   apiMethod: 'orderCancelAll',
   parseResponse: (data) => data,
 });
 
-export const cancelAllProfitOrders = createThunkV2({
+export const cancelAllProfitOrders = createApiThunk({
   actionName: types.CANCEL_ALL_PROFIT_ORDERS,
   apiMethod: 'orderCancel',
   parseResponse: (data) => ({orderID: data.map(({orderID}) => orderID)}),
 });
 
-export const getOpenOrders = createThunkV2({
+export const getOpenOrders = createApiThunk({
   actionName: types.GET_OPEN_ORDERS,
   apiMethod: 'getOpenOrders',
   parseResponse: (data) => data,
 });
 
-export const addProfitTarget = createThunkV2({
+export const addProfitTarget = createApiThunk({
   actionName: types.ADD_PROFIT_ORDER,
   apiMethod: 'profitTargetOrder',
   parseResponse: (data) => data,
   payloadToReturn: 'orderID',
 });
 
-export const cancelProfitOrder = createThunkV2({
+export const cancelProfitOrder = createApiThunk({
   actionName: types.REMOVE_PROFIT_ORDER,
   apiMethod: 'orderCancel',
   parseResponse: (data) => ({orderID: data.map(({orderID}) => orderID)}),

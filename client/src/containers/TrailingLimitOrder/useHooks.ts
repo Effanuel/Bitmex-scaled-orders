@@ -7,9 +7,12 @@ import {
   websocketCurrentPrice,
   websocketTrailingPriceSelector,
 } from 'redux/selectors';
-import {ammendTrailingOrder, __clearTrailingOrder} from 'redux/modules/trailing/trailingModule';
+import {__clearTrailingOrder} from 'redux/modules/trailing/trailingModule';
+import {useAppContext} from 'general/hooks';
+import {Exchange} from 'redux/modules/settings/types';
 
-export function useHooks() {
+export function useHooks(exchange: Exchange) {
+  const {api} = useAppContext();
   const {
     wsTrailingPrice,
     wsCurrentPrice,
@@ -23,11 +26,11 @@ export function useHooks() {
   } = useSelector((state: AppState) => {
     const {websocket, trailing} = state;
     return {
-      wsCurrentPrice: websocketCurrentPrice(state),
-      wsTrailingPrice: websocketTrailingPriceSelector(state),
-      wsBidAskPrices: websocketBidAskPrices(state),
-      status: trailingOrderStatusSelector(state),
-      connected: websocket.connected,
+      wsCurrentPrice: websocketCurrentPrice(state, exchange),
+      wsTrailingPrice: websocketTrailingPriceSelector(state, exchange),
+      wsBidAskPrices: websocketBidAskPrices(state, exchange),
+      status: trailingOrderStatusSelector(state, exchange),
+      connected: websocket[exchange].connected,
       trailOrderId: trailing.trailOrderId,
       trailOrderPrice: trailing.trailOrderPrice,
       trailOrderStatus: trailing.trailOrderStatus,
@@ -42,10 +45,10 @@ export function useHooks() {
     if (wsTrailingPrice && trailOrderPrice && !statuses.includes(status)) {
       const toAmmend = wsTrailingPrice !== trailOrderPrice;
       if (toAmmend) {
-        dispatch(ammendTrailingOrder({orderID: trailOrderId, price: wsTrailingPrice}));
+        api.ammendTrailingOrder({orderID: trailOrderId, price: wsTrailingPrice});
       }
     }
-  }, [dispatch, trailOrderPrice, trailOrderId, trailOrderSide, status, wsTrailingPrice]);
+  }, [api, trailOrderPrice, trailOrderId, trailOrderSide, status, wsTrailingPrice]);
 
   useEffect(() => {
     const statuses = ['Filled', 'Canceled', 'Order not placed.'];

@@ -1,49 +1,54 @@
-//@ts-nocheck
-import {Api as BitmexAPI} from './bitmex';
-import {createProfitTarget, MarketOrderProps, ProfitTarget, ProfitTargetProps, RegularOrder, StopLoss} from 'utils';
-import {EXEC_INST, Order, ORD_TYPE} from './bitmex/types';
+import axios, {Method} from 'axios';
+import {Exchange} from 'redux/modules/settings/types';
+import {BitmexBlock} from './bitmex/bitmex-block';
 
-export type LimitOrder = Pick<Order, 'symbol' | 'price' | 'orderQty' | 'side' | 'text'>;
-export type OrderAmend = Pick<Order, 'orderID' | 'price'>;
-export type OrderCancel = {orderID: string[] | string};
-export type OrderBulk = RegularOrder | StopLoss | ProfitTarget;
+export type ExchangeAPIFacadeType = ClassMethods<typeof ExchangeAPIFacade>;
+export type AvailableMethods = BitmexBlock;
+type GetQuery = (exchange: Exchange) => <K extends keyof BitmexBlock>(method: K) => BitmexBlock[K];
 
-export type APIType = ClassMethods<typeof API>;
+export class ExchangeAPIFacade implements ExchangeAPIFacadeType {
+  private BitmexBlock: BitmexBlock = new BitmexBlock();
 
-type Exchange = 'bitmex';
-
-export type AvailableMethods = API['availableMethods']['bitmex'];
-
-type GetQuery = <K extends keyof AvailableMethods>(method: K) => AvailableMethods[K];
-
-export class API implements APIType {
-  constructor(private activeExchange: Exchange = 'bitmex', private bitmex = new BitmexAPI()) {}
-
-  private availableMethods = {
-    bitmex: {
-      marketOrder: (props: MarketOrderProps) => this.bitmex.order.orderNew({...props, ordType: ORD_TYPE.Market}),
-      limitOrder: (props: LimitOrder) =>
-        this.bitmex.order.orderNew({...props, execInst: EXEC_INST.ParticipateDoNotInitiate, ordType: ORD_TYPE.Limit}),
-      profitTargetOrder: (props: ProfitTargetProps) => this.bitmex.order.orderNew(createProfitTarget(props)),
-      orderAmend: (props: OrderAmend) => this.bitmex.order.orderAmend(props),
-      orderCancel: (props: OrderCancel) => this.bitmex.order.orderCancel(props),
-      orderCancelAll: () => this.bitmex.order.orderCancelAll({}),
-      orderBulk: (orders: OrderBulk[]) => this.bitmex.order.orderNewBulk({orders}),
-      getBalance: () => this.bitmex.user.userGetMargin(),
-      getOpenOrders: () => this.bitmex.order.orderGetOrders({filter: '{"open": true}', reverse: true}),
-    },
-  };
-
-  getQuery: GetQuery = (method) => {
-    const query = this.availableMethods[this.activeExchange]?.[method];
-    if (!query) throw new Error(`${method} for ${this.activeExchange} hasn't been implemented yet`);
-    return query;
+  getQuery: GetQuery = (exchange) => {
+    return (method) => {
+      switch (exchange) {
+        case Exchange.BitMeX:
+          return this.BitmexBlock[method];
+        case Exchange.BitMeXTEST:
+          return this.BitmexBlock[method];
+        default:
+          return this.BitmexBlock[method];
+      }
+    };
   };
 }
 
-export type MethodNames = KeysByType<API, Function>;
-export type MethodProps = Parameters<ClassMethods<typeof API>[MethodNames]>[number];
+export type BasicAPIType = ClassMethods<typeof BasicAPI>;
 
-export type MockedMethods = {
-  [key in keyof API['availableMethods']['bitmex']]: {props: any; result: any};
-}[];
+export class BasicAPI implements BasicAPIType {
+  private async request<R>(url: string, method: Method, data?: unknown) {
+    return axios({url, method, data: data, params: data}) as Promise<{data: {data: R}}>;
+  }
+
+  async saveApiKey(params: {exchange: Exchange; key: string; secret: string}) {
+    return this.request<{exchange: Exchange}>('/settings/apiKey', 'POST', params);
+  }
+
+  async getApiKey(params: {exchange: Exchange; key: string; secret: string}) {
+    return this.request<{exchange: Exchange; key: string; secret: string}>('/settings/apiKey', 'GET', params);
+  }
+
+  async getAllApiKeys() {
+    return this.request<{exchanges: Exchange[]}>('/settings/apiKeys', 'GET');
+  }
+
+  async deleteApiKey(exchange: Exchange) {
+    return this.request<Exchange>('/settings/apiKey', 'DELETE', exchange);
+  }
+
+  async deleteAllApiKeys() {
+    return this.request<unknown>('/settings/apiKeys', 'DELETE');
+  }
+}
+
+export const basicApi = new BasicAPI();

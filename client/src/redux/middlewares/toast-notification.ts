@@ -8,11 +8,12 @@ import {postMarketCrossOrder as crossPostMarketOrder} from 'redux/modules/cross/
 import {addProfitTarget, cancelOrder} from 'redux/modules/orders/ordersModule';
 import {SIDE} from 'redux/api/bitmex/types';
 
-const middleware: Middleware<JsObj, AppState, Dispatch<AnyAction>> = (store) => (next) => (action: Action) => {
-  registeredToasts[action.type]?.(action);
+const middleware: Middleware<JsObj, AppState, Dispatch<AnyAction>> = (store) => (next) => (action: AnyAction) => {
+  // if condition is true, request is unauthenticated because of async thunk condition
+  const payload = action?.meta?.condition ? 'Unauthenticated' : action.payload;
+  registeredToasts[action.type]?.({...action, payload});
   next(action);
 };
-
 type RequestFunction = (action: Action) => void;
 type ThunkToasts = {[key: string]: RequestFunction};
 

@@ -1,5 +1,5 @@
 import {createReducer} from '@reduxjs/toolkit';
-import {createAction, createThunkV2} from 'redux/helpers/actionHelpers';
+import {createAction, createApiThunk} from 'redux/helpers/actionHelpers';
 import {SIDE, SYMBOL} from 'redux/api/bitmex/types';
 import * as types from './types';
 
@@ -16,20 +16,20 @@ export const __clearTrailingOrder = createAction(types.__CLEAR_TRAILING_ORDER);
 
 export const changeTrailingOrderSymbol = createAction<SYMBOL>(types.CHANGE_TRAILING_ORDER_SYMBOL);
 
-export const postTrailingOrder = createThunkV2({
+export const postTrailingOrder = createApiThunk({
   actionName: types.POST_TRAILING_ORDER,
   apiMethod: 'limitOrder',
   parseResponse: (data) => ({orderID: data.orderID, price: data.price, text: data.text}),
   payloadToReturn: 'side',
 });
 
-export const ammendTrailingOrder = createThunkV2({
+export const ammendTrailingOrder = createApiThunk({
   actionName: types.PUT_TRAILING_ORDER,
   apiMethod: 'orderAmend',
   parseResponse: (data) => ({price: data.price}),
 });
 
-export const cancelTrailingOrder = createThunkV2({
+export const cancelTrailingOrder = createApiThunk({
   actionName: types.DELETE_TRAILING_ORDER,
   apiMethod: 'orderCancel',
   adaptPayload: (_, getState) => ({orderID: getState().trailing.trailOrderId}),

@@ -1,8 +1,7 @@
 import React from 'react';
-import {useDispatch} from 'react-redux';
 import {Modal} from 'components';
-import {cancelProfitOrder} from 'redux/modules/orders/ordersModule';
 import {SYMBOL} from 'redux/api/bitmex/types';
+import {useAppContext} from 'general/hooks';
 
 interface Props {
   symbol: SYMBOL;
@@ -12,9 +11,9 @@ interface Props {
 }
 
 export function CancelProfitOrderModal({symbol, price, quantity, orderID}: Props) {
-  const dispatch = useDispatch();
+  const {api} = useAppContext();
 
-  const emitConfirm = React.useCallback(() => void dispatch(cancelProfitOrder({orderID})), [dispatch, orderID]);
+  const emitConfirm = React.useCallback(() => api.cancelProfitOrder({orderID}), [api, orderID]);
 
   return (
     <Modal title="Cancel Profit Order" onConfirm={emitConfirm}>

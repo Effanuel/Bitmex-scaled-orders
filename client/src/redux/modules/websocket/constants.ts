@@ -1,13 +1,12 @@
 import {SYMBOL} from 'redux/api/bitmex/types';
+import {Exchange} from '../settings/types';
 
-enum Exchange {
-  BITMEX = 'bitmex',
-}
+const baseUrls: {[key in Exchange]: string} = {
+  [Exchange.BitMeX]: `wss://www.bitmex.com/realtime?subscribe=`,
+  [Exchange.BitMeXTEST]: `wss://testnet.bitmex.com/realtime?subscribe=`,
+};
 
-export function websocketBaseUrl(exchange: Exchange = Exchange.BITMEX) {
-  const baseUrls: {[key in Exchange]: string} = {
-    bitmex: `wss://${process.env.REACT_APP___TESTNET === 'true' ? 'testnet' : 'www'}.bitmex.com/realtime?subscribe=`,
-  };
+export function websocketBaseUrl(exchange: Exchange) {
   return baseUrls[exchange];
 }
 

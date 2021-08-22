@@ -9,6 +9,8 @@ type iterobject<T = string> = {[key: string]: T};
 
 type RequiredProperty<T> = {[P in keyof T]: Required<NonNullable<T[P]>>};
 
+type RawType<P extends Promise<unknown>> = P extends Promise<infer U> ? U : never;
+
 type ValueOf<T> = T[keyof T];
 
 type UnionToIntersection<U> = (U extends unknown ? (k: U) => void : never) extends (k: infer I) => void ? I : never;

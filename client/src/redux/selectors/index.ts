@@ -1,9 +1,18 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import {createSelector} from '@reduxjs/toolkit';
+import {createSelector, OutputParametricSelector} from '@reduxjs/toolkit';
 import {SYMBOL, SIDE, Order} from '../../redux/api/bitmex/types';
 import {AppState} from 'redux/modules/state';
 import {INSTRUMENT_PARAMS, RegularOrder, StopLoss} from 'utils';
 import {parseNumber} from 'general/formatting';
+import {Exchange} from 'redux/modules/settings/types';
+
+function createWebsocketSelector<K extends keyof AppState['websocket']['bitmex']>(key: K) {
+  return createSelector(
+    (state: AppState) => state.websocket,
+    (_: AppState, exchange: Exchange) => exchange, // this is the parameter we need
+    (ws, exchange) => ws[exchange][key],
+  );
+}
 
 export interface SymbolPrices {
   symbol: SYMBOL;
@@ -22,11 +31,9 @@ const getOrderLoading = ({preview: {previewLoading}}: AppState) => previewLoadin
 const getOrderError = ({preview: {error}}: AppState) => error;
 export const getBalance = ({preview: {balance}}: AppState) => balance;
 
-export const table_instrument = ({websocket: {instrument}}: AppState) => instrument;
-const table_order = ({websocket: {order}}: AppState) => order;
-const websocketLoading = ({websocket: {wsLoading}}: AppState) => wsLoading;
-const websocketMessage = ({websocket: {message}}: AppState) => message;
-const websocketConnected = ({websocket: {connected}}: AppState) => connected;
+export const table_instrument = createWebsocketSelector('instrument');
+
+const table_order = createWebsocketSelector('order');
 
 const getTrailingOrderStatus = ({trailing: {trailOrderStatus}}: AppState) => trailOrderStatus;
 const getTrailingOrderId = ({trailing: {trailOrderId}}: AppState) => trailOrderId;
@@ -180,3 +187,8 @@ export const groupedOrdersSelector = createSelector([getProfitOrders], (orders):
   });
   return groupedOrders;
 });
+
+export const activeApiKeySelector = createSelector(
+  [(state: AppState) => state.settings.activeApiKeys, (state: AppState) => state.settings.activeExchange],
+  (activeApiKeys, activeExchange) => Boolean(activeExchange && (activeApiKeys?.[activeExchange] ?? false)),
+);

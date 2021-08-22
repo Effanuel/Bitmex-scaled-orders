@@ -1,27 +1,25 @@
+import {WebsocketResponse, WebsocketState, RESPONSE_ACTIONS, FETCH_ORDERS, Tables, TableData} from './types';
 import {
-  WebsocketResponse,
-  WebsocketState,
-  RESPONSE_ACTIONS,
-  FETCH_ORDERS,
-  REDUX_WEBSOCKET_BROKEN,
-  REDUX_WEBSOCKET_CLOSED,
-  REDUX_WEBSOCKET_CONNECT,
-  REDUX_WEBSOCKET_MESSAGE,
-  REDUX_WEBSOCKET_OPEN,
-  REDUX_WEBSOCKET_SEND,
-  REDUX_WEBSOCKET_ERROR,
-  Tables,
-  TableData,
-} from './types';
-import {connect, disconnect, send} from '@giantmachines/redux-websocket';
+  connect,
+  disconnect,
+  send,
+  WEBSOCKET_BROKEN,
+  WEBSOCKET_CLOSED,
+  WEBSOCKET_CONNECT,
+  WEBSOCKET_MESSAGE,
+  WEBSOCKET_OPEN,
+  WEBSOCKET_SEND,
+  WEBSOCKET_ERROR,
+} from '@giantmachines/redux-websocket';
 import {Thunk} from '../state';
 import {Reducer} from 'redux';
 import {authKeyExpires} from 'utils/auth';
 import {SUBSCRIPTION_TOPICS, SYMBOL} from 'redux/api/bitmex/types';
 import {websocketBaseUrl, instrumentTopics} from './constants';
 import {Instrument, Order} from '../../api/bitmex/types';
+import {Exchange} from '../settings/types';
 
-export const defaultState: WebsocketState = {
+const websocketSlice = {
   __keys: {},
   instrument: [],
   order: [],
@@ -31,102 +29,130 @@ export const defaultState: WebsocketState = {
   error: '',
 };
 
+export const defaultState: WebsocketState = {
+  [Exchange.BitMeX]: websocketSlice,
+  [Exchange.BitMeXTEST]: websocketSlice,
+};
+
 export const websocketReducer: Reducer<WebsocketState, any> = (state = defaultState, action): WebsocketState => {
-  switch (action.type) {
-    case FETCH_ORDERS:
-      return {...state, order: {...state.order, ...action.payload}};
-    case REDUX_WEBSOCKET_CONNECT:
-      return {...state, wsLoading: true, message: 'Connecting...'};
-    case REDUX_WEBSOCKET_OPEN:
-      return {...state, wsLoading: false, message: 'Websocket opened.', connected: true};
-    case REDUX_WEBSOCKET_BROKEN:
-    case REDUX_WEBSOCKET_CLOSED:
-      return {...state, ...defaultState, message: 'Websocket closed.'};
-    case REDUX_WEBSOCKET_ERROR:
-      return {...state, ...defaultState, message: 'Error. Too many reloads?'};
-    case REDUX_WEBSOCKET_MESSAGE:
-      return reduxWeboscketMessage(state, action);
-    case REDUX_WEBSOCKET_SEND:
+  const [exchange, type] = action.type.split('::') as [Exchange, string];
+  const exchangeSlice = state[exchange];
+
+  switch (type) {
+    case FETCH_ORDERS: {
+      const slice = {...exchangeSlice, order: {...exchangeSlice.order, ...action.payload}};
+      return {...state, [exchange]: slice};
+    }
+    case WEBSOCKET_CONNECT: {
+      const slice = {...exchangeSlice, wsLoading: true, message: 'Connecting...'};
+      return {...state, [exchange]: slice};
+    }
+    case WEBSOCKET_OPEN: {
+      const slice = {...exchangeSlice, wsLoading: false, message: 'Websocket opened.', connected: true};
+      return {...state, [exchange]: slice};
+    }
+    case WEBSOCKET_BROKEN:
+    case WEBSOCKET_CLOSED: {
+      const slice = {...defaultState, message: 'Websocket closed.'};
+      return {...state, [exchange]: slice};
+    }
+    case WEBSOCKET_ERROR: {
+      const slice = {...defaultState, message: 'Error. Too many reloads?'};
+      return {...state, [exchange]: slice};
+    }
+    case WEBSOCKET_MESSAGE:
+      return reduxWeboscketMessage(state, action, exchange);
+    case WEBSOCKET_SEND:
     default:
       return state;
   }
 };
 
-const reduxWeboscketMessage: Reducer<WebsocketState, any> = (state = defaultState, action): WebsocketState => {
+const reduxWeboscketMessage = (state = defaultState, action: any, exchange: Exchange): WebsocketState => {
   const response: WebsocketResponse = JSON.parse(action.payload.message);
   const {table, data, action: ws_action, subscribe, status} = response;
+  const exchangeSlice = state[exchange];
 
   if (subscribe) {
     const message = response['success'] ? 'Successful subscription.' : 'Error while subscribing...';
-    return {...state, message};
+    return {...state, [exchange]: {...exchangeSlice, message}};
   } else if (!!status) {
     const message = `Websocket. Status: ${response.status || 'Error'}`;
-    return {...state, message};
+    return {...state, [exchange]: {...exchangeSlice, message}};
   } else if (ws_action) {
     switch (ws_action) {
       case RESPONSE_ACTIONS.PARTIAL: {
-        const updatedTable = [...state[table], ...data];
-        const updatedKeys = {...state.__keys, [table]: response.keys};
+        const updatedTable = [...exchangeSlice[table], ...data];
+        const updatedKeys = {...exchangeSlice.__keys, [table]: response.keys};
+        const slice = {...exchangeSlice, [table]: updatedTable, __keys: updatedKeys};
 
-        return {...state, [table]: updatedTable, __keys: updatedKeys};
+        return {...state, [exchange]: slice};
       }
       case RESPONSE_ACTIONS.INSERT: {
-        const updatedTable = [...state[table], ...data];
+        const updatedTable = [...exchangeSlice[table], ...data];
+        const slice = {...exchangeSlice, [table]: updatedTable};
 
-        return {...state, [table]: updatedTable};
+        return {...state, [exchange]: slice};
       }
       case RESPONSE_ACTIONS.UPDATE: {
-        let updatedTable: Instrument[] | Order[] = state[table];
+        let updatedTable: Instrument[] | Order[] = exchangeSlice[table];
         for (const key_val of data) {
-          const indexUpdate = findItemByKeys(state.__keys[table] as any, updatedTable, key_val as any);
+          const indexUpdate = findItemByKeys(exchangeSlice.__keys[table] as any, updatedTable, key_val as any);
           if (indexUpdate === -1) continue;
-          const updatedValue: Instrument | Order = {...state[table][indexUpdate], ...key_val};
+          const updatedValue: Instrument | Order = {...exchangeSlice[table][indexUpdate], ...key_val};
 
           updatedTable = [
-            ...state[table].slice(0, indexUpdate),
+            ...exchangeSlice[table].slice(0, indexUpdate),
             updatedValue,
-            ...state[table].slice(indexUpdate + 1),
+            ...exchangeSlice[table].slice(indexUpdate + 1),
           ] as Instrument[] | Order[];
 
           if (table === 'order') {
             const leavesQty = (updatedValue as Order)?.leavesQty;
             if (typeof leavesQty === 'number' && leavesQty <= 0) {
-              updatedTable = state[table].filter((_, i) => i !== indexUpdate);
+              updatedTable = exchangeSlice[table].filter((_, i) => i !== indexUpdate);
             }
           }
         }
-        return {...state, [table]: updatedTable};
+
+        const slice = {...exchangeSlice, [table]: updatedTable};
+        return {...state, [exchange]: slice};
       }
     }
   } else if (!!response?.unsubscribe) {
-    const {[response.unsubscribe]: _deleted, ...rest} = state.__keys;
+    const {[response.unsubscribe]: _deleted, ...rest} = exchangeSlice.__keys;
     // eslint-disable-next-line no-console
     console.warn('UNSUBSCRIBED: ', rest, response.unsubscribe);
 
-    return {...state, __keys: rest};
+    const slice = {...exchangeSlice, __keys: rest};
+    return {...state, [exchange]: slice};
   }
   return state;
 };
 
-export const wsConnect = (): Thunk => async (dispatch) => {
-  try {
-    const url = websocketBaseUrl();
-    const subscribe = instrumentTopics(SYMBOL.XBTUSD, SYMBOL.ETHUSD, SYMBOL.XRPUSD);
-    dispatch(connect(`${url}${subscribe}`));
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    console.log(err.response.data, 'wsConnect Error');
-  }
-};
+export const wsConnect =
+  (exchange: Exchange): Thunk =>
+  async (dispatch) => {
+    try {
+      const url = websocketBaseUrl(exchange);
+      const subscribe = instrumentTopics(SYMBOL.XBTUSD, SYMBOL.ETHUSD, SYMBOL.XRPUSD);
+      dispatch(connect(`${url}${subscribe}`, [exchange]));
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.log(err.response.data, 'wsConnect Error');
+    }
+  };
 
-export const wsDisconnect = (): Thunk => async (dispatch) => {
-  try {
-    dispatch(disconnect());
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    console.log(err.response.data, 'wsDisconnect Error');
-  }
-};
+export const wsDisconnect =
+  (exchange: Exchange): Thunk =>
+  async (dispatch) => {
+    try {
+      dispatch(disconnect(exchange));
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.log(err.response.data, 'wsDisconnect Error');
+    }
+  };
 
 export const wsAuthenticate = (): Thunk => async (dispatch) => {
   try {

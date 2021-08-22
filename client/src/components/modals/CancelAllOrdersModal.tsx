@@ -1,19 +1,16 @@
 import React from 'react';
-import {useDispatch} from 'react-redux';
 import {Modal} from 'components';
-import {cancelAllOrders} from 'redux/modules/orders/ordersModule';
+import {useAppContext} from 'general/hooks';
 
 interface Props {
   totalOrders: number;
 }
 
 export function CancelAllOrdersModal({totalOrders}: Props) {
-  const dispatch = useDispatch();
-
-  const emitConfirm = React.useCallback(() => void dispatch(cancelAllOrders()), [dispatch]);
+  const {api} = useAppContext();
 
   return (
-    <Modal title="Cancel All Orders" onConfirm={emitConfirm}>
+    <Modal title="Cancel All Orders" onConfirm={api.cancelAllOrders}>
       {`This will cancel ${totalOrders} order${totalOrders > 1 ? 's' : ''}`}
     </Modal>
   );

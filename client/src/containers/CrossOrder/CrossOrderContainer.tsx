@@ -4,11 +4,18 @@ import {SelectDropdown, InputField, Button, SideRadioButtons, Row, MainContainer
 import {SYMBOL, SIDE} from 'redux/api/bitmex/types';
 import {CROSS_ORDER_CONTAINER} from 'data-test-ids';
 import buildOrderPresenter from '../../presenters/cross-label-presenter';
-import {clearCrossOrder, createCrossOrder} from 'redux/modules/cross/crossModule';
+import {clearCrossOrder} from 'redux/modules/cross/crossModule';
 import {useHooks} from './useHooks';
 import {INSTRUMENT_PARAMS} from 'utils';
+import {useAppContext} from 'general/hooks';
+import {Exchange} from 'redux/modules/settings/types';
 
-export default React.memo(function CrossOrderContainer() {
+interface Props {
+  exchange: Exchange;
+}
+
+export default React.memo(function CrossOrderContainer({exchange}: Props) {
+  const {api} = useAppContext();
   const dispatch = useDispatch();
 
   const [symbol, setSymbol] = React.useState(SYMBOL.XBTUSD);
@@ -16,15 +23,15 @@ export default React.memo(function CrossOrderContainer() {
   const [quantity, setQuantity] = React.useState<string>('');
   const [side, setSide] = React.useState<SIDE>(SIDE.SELL);
 
-  const {wsCrossPrice, connected, crossOrderPrice} = useHooks();
+  const {wsCrossPrice, connected, crossOrderPrice} = useHooks(exchange);
 
   const createOrder = React.useCallback(() => {
     if (price && +price > 0 && quantity && +quantity > 0) {
-      dispatch(createCrossOrder({price: +price, symbol, side, orderQty: +quantity}));
+      api.createCrossOrder({price: +price, symbol, side, orderQty: +quantity});
       setPrice('');
       setQuantity('');
     }
-  }, [dispatch, price, quantity, side, symbol]);
+  }, [api, price, quantity, side, symbol]);
 
   const cancelCrossOrder = React.useCallback(() => void dispatch(clearCrossOrder()), [dispatch]);
 

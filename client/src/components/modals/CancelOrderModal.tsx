@@ -1,16 +1,16 @@
 import React from 'react';
-import {useDispatch, useSelector} from 'react-redux';
+import {useSelector} from 'react-redux';
 import {Modal} from 'components';
-import {cancelOrder} from 'redux/modules/orders/ordersModule';
 import {AppState} from 'redux/modules/state';
 import {groupedOrdersSelector, orderSelector} from 'redux/selectors';
+import {useAppContext} from 'general/hooks';
 
 interface Props {
   orderID: string;
 }
 
 export function CancelOrderModal({orderID}: Props) {
-  const dispatch = useDispatch();
+  const {api} = useAppContext();
 
   const order = useSelector((state: AppState) => orderSelector(state, {orderID}));
   const groupedOrders = useSelector(groupedOrdersSelector);
@@ -22,9 +22,9 @@ export function CancelOrderModal({orderID}: Props) {
 
   const emitConfirm = React.useCallback(() => {
     if (order) {
-      dispatch(cancelOrder({orderID: [order.orderID, ...profitOrderIDs]}));
+      api.cancelOrder({orderID: [order.orderID, ...profitOrderIDs]});
     }
-  }, [dispatch, profitOrderIDs, order]);
+  }, [api, profitOrderIDs, order]);
 
   if (!order) {
     return null;

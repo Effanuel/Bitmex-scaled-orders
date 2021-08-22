@@ -8,6 +8,7 @@ import {MainContainer, Row} from 'components';
 import styles from './TickerPricesContainer.module.scss';
 import {AppState} from 'redux/modules/state';
 import {formatPrice} from 'general/formatting';
+import {useExchange} from 'general/hooks';
 
 const none = '---' as unknown as number;
 
@@ -18,8 +19,9 @@ const defaultData: SymbolPrices[] = [
 ];
 
 export default React.memo(function TickerPricesContainer() {
-  const wsMessage = useSelector((state: AppState) => state.websocket.message);
-  const allPrices = useSelector(allWebsocketBidAskPrices, isEqual);
+  const exchange = useExchange();
+  const wsMessage = useSelector((state: AppState) => state.websocket[exchange].message);
+  const allPrices = useSelector((state: AppState) => allWebsocketBidAskPrices(state, exchange), isEqual);
 
   const data = allPrices?.length ? allPrices : defaultData;
 

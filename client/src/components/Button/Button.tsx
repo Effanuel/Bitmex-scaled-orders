@@ -5,7 +5,7 @@ import {SIDE} from '../../redux/api/bitmex/types';
 import {COMPONENTS} from 'data-test-ids';
 import styles from './Button.module.scss';
 
-export type ButtonVariants = 'submit' | 'text' | 'custom' | 'textSell' | SIDE;
+export type ButtonVariants = 'submit' | 'text' | 'custom' | 'textSell' | 'outline' | SIDE;
 
 interface Props<T> {
   testID?: string;
@@ -36,6 +36,7 @@ export function Button<T extends string>({
     [styles.text_sell]: variant === 'textSell',
     [styles.button_buy]: variant === 'Buy',
     [styles.button_sell]: variant === 'Sell',
+    [styles.outline]: variant === 'outline',
     [className]: variant === 'custom',
   });
 

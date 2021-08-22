@@ -2,15 +2,18 @@ import React from 'react';
 import {Table, Tbody, Td, Th, Thead, Tr} from '@chakra-ui/react';
 import {formatPrice} from 'general/formatting';
 import {PREVIEW_CONTAINER} from 'data-test-ids';
-import {useReduxSelector} from 'redux/helpers/hookHelpers';
 import {SYMBOL} from 'redux/api/bitmex/types';
+import {useSelector} from 'react-redux';
+import {ordersAverageEntrySelector, ordersRiskPercSelector, ordersRiskSelector} from 'redux/selectors';
 
 interface Props {
   symbol: SYMBOL;
 }
 
 export default function DetailsTable({symbol}: Props) {
-  const {averagePrice, riskBTC, riskPerc} = useReduxSelector('averagePrice', 'riskBTC', 'riskPerc');
+  const averagePrice = useSelector(ordersAverageEntrySelector);
+  const riskBTC = useSelector(ordersRiskSelector);
+  const riskPerc = useSelector(ordersRiskPercSelector);
 
   const renderPriceSection = React.useMemo(() => {
     return (

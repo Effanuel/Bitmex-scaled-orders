@@ -1,57 +1,29 @@
 import React from 'react';
-import {useDispatch} from 'react-redux';
 import {Box} from '@chakra-ui/react';
-import {
-  ScaledOrders,
-  MarketOrderContainer,
-  TrailingLimitOrder,
-  TickerPricesContainer,
-  //   CrossOrderContainer,
-  OpenOrdersContainer,
-} from 'containers';
-import {Spinner, ToastContainer} from 'components';
-import {useReduxSelector} from 'redux/helpers/hookHelpers';
-import {wsConnect, wsDisconnect, wsSubscribeTo, wsAuthenticate} from 'redux/modules/websocket/websocketModule';
-import {getBalance} from 'redux/modules/preview/previewModule';
+import {Route, Switch} from 'react-router-dom';
+import {ExchangeRoute, Header} from 'components';
+import {Exchange} from 'redux/modules/settings/types';
+import Home from 'pages/Home';
+import Settings from 'pages/Settings';
+import NotFound from 'pages/NotFound';
+import BitmexExchange from 'pages/Bitmex';
+import {RoutePath} from 'pages/paths';
+
 import 'scss/root.module.scss';
 
-const App = React.memo(() => {
-  const dispatch = useDispatch();
-  const {previewLoading, trailLoading, wsLoading, connected} = useReduxSelector(
-    'previewLoading',
-    'trailLoading',
-    'wsLoading',
-    'connected',
-  );
-
-  React.useEffect(() => {
-    dispatch(wsConnect());
-
-    return () => {
-      dispatch(wsDisconnect());
-    };
-  }, [dispatch]);
-
-  React.useEffect(() => {
-    if (connected) {
-      dispatch(getBalance());
-      dispatch(wsAuthenticate());
-      dispatch(wsSubscribeTo('order'));
-    }
-  }, [dispatch, connected]);
-
+export default React.memo(function App() {
   return (
-    <Box marginTop="35px">
-      <ToastContainer />
-      <Spinner loading={previewLoading || trailLoading || wsLoading} />
-      <TickerPricesContainer />
-      <OpenOrdersContainer />
-      {/* <CrossOrderContainer /> TODO: disabling for now */}
-      <MarketOrderContainer />
-      <TrailingLimitOrder />
-      <ScaledOrders />
-    </Box>
+    <>
+      <Header />
+      <Box maxWidth="720px" margin="auto" minWidth="720px">
+        <Switch>
+          <Route path={RoutePath.Home} exact component={Home} />
+          <ExchangeRoute path={RoutePath.BitMex} exchange={Exchange.BitMeX} component={BitmexExchange} />
+          <ExchangeRoute path={RoutePath.BitmexTest} exchange={Exchange.BitMeXTEST} component={BitmexExchange} />
+          <Route path={RoutePath.Settings} component={Settings} />
+          <Route component={NotFound} />
+        </Switch>
+      </Box>
+    </>
   );
 });
-
-export default App;

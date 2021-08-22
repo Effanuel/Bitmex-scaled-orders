@@ -1,6 +1,6 @@
 import {createReducer} from '@reduxjs/toolkit';
 import {createScaledOrders, DistributionProps, DISTRIBUTION} from 'utils';
-import {createAction, createThunkV2} from 'redux/helpers/actionHelpers';
+import {createAction, createApiThunk} from 'redux/helpers/actionHelpers';
 import {
   SHOW_PREVIEW,
   TOGGLE_PREVIEW,
@@ -11,19 +11,19 @@ import {
   PREVIEW_POST_MARKET_ORDER,
 } from './types';
 
-export const postMarketOrder = createThunkV2({
+export const postMarketOrder = createApiThunk({
   actionName: PREVIEW_POST_MARKET_ORDER,
   apiMethod: 'marketOrder',
   parseResponse: (data) => data,
 });
 
-export const postOrderBulk = createThunkV2({
+export const postOrderBulk = createApiThunk({
   actionName: PREVIEW_POST_ORDER,
   apiMethod: 'orderBulk',
   parseResponse: (data) => data,
 });
 
-export const getBalance = createThunkV2({
+export const getBalance = createApiThunk({
   actionName: GET_BALANCE,
   apiMethod: 'getBalance',
   parseResponse: (data) => ({walletBalance: data.walletBalance}),

@@ -1,36 +1,66 @@
-import {REDUX_WEBSOCKET_MESSAGE, REDUX_WEBSOCKET_OPEN} from 'redux/modules/websocket/types';
-import {Inspector, Step} from 'influnt/dist/types';
-import {MockedStore} from './mockStore';
-import {withStore} from './drivers';
+import {ForgedResponse, Inspector, Step} from 'influnt/dist/types';
 import {AppState} from 'redux/modules/state';
+import {BasicAPIType} from 'redux/api/api';
+import {InfluntExtraArgs} from './influnt';
+import {Exchange} from 'redux/modules/settings/types';
+import {WEBSOCKET_MESSAGE, WEBSOCKET_OPEN} from '@giantmachines/redux-websocket';
 
-export function openWebsocket(): Step<MockedStore> {
+export function openWebsocket(): Step<InfluntExtraArgs> {
   return ({extraArgs}) => {
-    extraArgs.dispatch({type: REDUX_WEBSOCKET_OPEN});
+    extraArgs.store.dispatch({type: `${Exchange.BitMeX}::${WEBSOCKET_OPEN}`});
   };
 }
 
-export function sendWebsocketMessage<D>(data: D): Step<MockedStore> {
+export function sendWebsocketMessage<D>(data: D): Step<InfluntExtraArgs> {
   return ({extraArgs}) => {
     const message = JSON.stringify(data);
-    extraArgs.dispatch({type: REDUX_WEBSOCKET_MESSAGE, payload: {message}});
+    extraArgs.store.dispatch({type: `${Exchange.BitMeX}::${WEBSOCKET_MESSAGE}`, payload: {message}});
   };
 }
 
-export function storeActions(): Inspector<string[], Parameters<typeof withStore>[number]> {
-  return ({extraArgs}) => extraArgs.getActions().map(({type}) => type);
+export function storeActions(): Inspector<string[], InfluntExtraArgs> {
+  return ({extraArgs}) => extraArgs.store.getActions().map(({type}) => type);
+}
+
+export function history(): Inspector<any, InfluntExtraArgs> {
+  return ({extraArgs}) => extraArgs.history?.location.pathname;
 }
 
 export function getState<K extends keyof AppState>(
   moduleKey: K,
   key?: keyof AppState[K],
-): Inspector<any, Parameters<typeof withStore>[number]> {
+): Inspector<any, InfluntExtraArgs> {
   return ({extraArgs}) => {
-    const module = extraArgs.getState()[moduleKey];
+    const module = extraArgs.store.getState()[moduleKey];
     return key ? module[key] : module;
   };
 }
 
 export function classNameOf(testID: string): Inspector<string | undefined> {
   return ({locateAll}) => locateAll(testID).className;
+}
+
+function createDeferredPromise<T>(): [Promise<T>, (value: T) => void] {
+  let resolver: (value: T) => void = () => undefined;
+  return [new Promise<T>((resolve) => void (resolver = resolve)), resolver];
+}
+
+export function respondBasic<P extends Parameters<BasicAPIType[K]>, K extends keyof BasicAPIType>(
+  responseId: K,
+  params: Parameters<BasicAPIType[K]> extends void[] ? [undefined] : P,
+) {
+  return {
+    with<R extends RawType<ReturnType<BasicAPIType[K]>>>(response: R): ForgedResponse<P, R> {
+      const [promise, resolve] = createDeferredPromise<R>();
+      return {
+        id: responseId,
+        _signature: Symbol(responseId),
+        response,
+        promise,
+        resolve: () => resolve(response),
+        //@ts-expect-error
+        params,
+      };
+    },
+  };
 }

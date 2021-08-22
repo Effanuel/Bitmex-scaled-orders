@@ -9,3 +9,5 @@ export * from './Toast/Toast';
 export * from './Modal/Modal';
 export * from './Row/Row';
 export * from './modals';
+export * from './Header/Header';
+export * from './ExchangeRoute/ExchangeRoute';

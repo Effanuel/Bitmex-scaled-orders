@@ -1,16 +1,16 @@
 import React from 'react';
 import {Tbody, Th, Thead, Tr, Table, Box} from '@chakra-ui/react';
 import {RepeatIcon} from '@chakra-ui/icons';
-import {useDispatch} from 'react-redux';
-import {useReduxSelector} from 'redux/helpers/hookHelpers';
 import {formatPrice} from 'general/formatting';
 import {Order, ORD_TYPE} from 'redux/api/bitmex/types';
 import {MainContainer} from 'components';
-import {getOpenOrders} from 'redux/modules/orders/ordersModule';
-import {useModal} from 'general/hooks';
+import {useAppContext, useModal} from 'general/hooks';
 import {OPEN_ORDERS_CONTAINER} from 'data-test-ids';
 import OpenOrderRow from './OpenOrderRow';
 import ProfitOrderInActionRow from './ProfitOrderInActionRow';
+import {useSelector} from 'react-redux';
+import {AppState} from 'redux/modules/state';
+import {groupedOrdersSelector} from 'redux/selectors';
 
 function Text({children}: {children: React.ReactNode}) {
   return (
@@ -47,24 +47,20 @@ export const presentOrderPrice = (order: Order) => {
   }
 };
 
-export default function OpenOrdersContainer() {
-  const dispatch = useDispatch();
+export default React.memo(function OpenOrdersContainer() {
+  const {api} = useAppContext();
   const {modals} = useModal();
 
-  const {openOrders, profitOrders, profitOrdersInAction, groupedOrders, ordersLoading, ordersError} = useReduxSelector(
-    'openOrders',
-    'profitOrders',
-    'profitOrdersInAction',
-    'groupedOrders',
-    'ordersLoading',
-    'ordersError',
-  );
-
-  const fetchOpenOrders = React.useCallback(() => void dispatch(getOpenOrders()), [dispatch]);
+  const openOrders = useSelector((state: AppState) => state.orders.openOrders);
+  const profitOrders = useSelector((state: AppState) => state.orders.profitOrders);
+  const profitOrdersInAction = useSelector((state: AppState) => state.orders.profitOrdersInAction);
+  const ordersLoading = useSelector((state: AppState) => state.orders.ordersLoading);
+  const ordersError = useSelector((state: AppState) => state.orders.ordersError);
+  const groupedOrders = useSelector(groupedOrdersSelector);
 
   React.useEffect(() => {
-    fetchOpenOrders();
-  }, [fetchOpenOrders]);
+    api.getOpenOrders();
+  }, [api]);
 
   const showCancelAllOrdersModal = React.useCallback(() => {
     const totalOrders = openOrders.length + profitOrders.length + profitOrdersInAction.length;
@@ -85,8 +81,8 @@ export default function OpenOrdersContainer() {
   }, [ordersError, ordersLoading, openOrders, profitOrdersInAction]);
 
   const icons = React.useMemo(
-    () => [{element: RepeatIcon, onClick: !ordersLoading ? fetchOpenOrders : undefined, color: 'green'}],
-    [fetchOpenOrders, ordersLoading],
+    () => [{element: RepeatIcon, onClick: !ordersLoading ? api.getOpenOrders : undefined, color: 'green'}],
+    [api, ordersLoading],
   );
 
   return (
@@ -126,4 +122,4 @@ export default function OpenOrdersContainer() {
       </Table>
     </MainContainer>
   );
-}
+});

@@ -1,4 +1,5 @@
 /api/dist
+/api/cache
 
 .DS_Store
 # Logs

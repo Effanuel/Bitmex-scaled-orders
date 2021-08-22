@@ -20,8 +20,9 @@
   background-color: var(--primaryColor);
   border-radius: 2px;
   padding: 5px 5px;
-  width: 120px;
-  height: 30px;
+  width: auto;
+  min-width: 120px;
+  height: 34px;
   &:focus:enabled {
     -webkit-box-shadow: none;
     box-shadow: none;
@@ -66,6 +67,16 @@
   border: 1px solid rgb(245, 157, 172);
   &:hover:enabled {
     background-color: var(--stopColor);
+  }
+}
+
+.outline {
+  @extend %regular;
+  color: var(--stopColor);
+  border: 1px solid var(--stopColor);
+  &:hover:enabled {
+    border: 1px solid rgb(245, 157, 172);
+    color: rgb(245, 157, 172);
   }
 }
 

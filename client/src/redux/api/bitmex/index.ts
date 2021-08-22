@@ -1,6 +1,6 @@
 import axios from 'axios';
 import _ from 'lodash/fp';
-import {OrderBulk} from '../api';
+import {OrderBulk} from './bitmex-block';
 import {
   AccessToken,
   Affiliate,

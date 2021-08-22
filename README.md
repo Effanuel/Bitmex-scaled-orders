@@ -1,8 +1,6 @@
-
-
-# BitMEX trading tool
-
-This project is a trading tool based on **BitMEX API** *(Binance coming next)*. This project has a long way to go before becoming an actual usable tool. If you notice any bugs, open an issue.
+<p align="center">
+  <img src="assets/app_4.png">
+</p>
 
 ## Table of Contents
 
@@ -16,6 +14,10 @@ This project is a trading tool based on **BitMEX API** *(Binance coming next)*. 
 - [Roadmap](#roadmap)
 - [License](#license)
 - [Useful material](#useful-material)
+
+# BitMEX trading tool
+
+This project is a trading tool based on **BitMEX API**. This project has a long way to go before becoming an actual usable tool. If you notice any bugs, open an issue.
 
 ### Current Features
 
@@ -74,16 +76,6 @@ This project is a trading tool based on **BitMEX API** *(Binance coming next)*. 
     - if you set a buy cross price above current price, it will trigger a market buy order as soon as the price crosses your cross order price;
     - if you set a sell cross order price above current price, it will trigger a market sell order when the current price crosses up and then down of the set cross price;
     - if you set a buy cross order price below current price, it will trigger a market buy order when the current price crosses down and then up of the set cross price.
-
-- **Open Orders:**
-
-  - See currently open orders;
-  - Add profit targets for open orders (uses limit stop-loss orders to achieve that);
-  - Cancel any open/profit order(s);
-
-<p align="center">
-  <img src="assets/open-orders.png">
-</p>
 
 ### Built With
 
@@ -172,15 +164,13 @@ npm run prod
 
 These are the available distributions to choose from:
 
-<p align="center">
- <img src="assets/distributions.png">
-</p>
+  <p align="center">
+  <img src="assets/distributions.png">
+  </p>
 
 Probability density function is used to calculate distributions:
 
-<p align="center">
- <img src="https://i.stack.imgur.com/bBIbn.png">
-</p>
+![formula](https://i.stack.imgur.com/bBIbn.png)
 
 </br>
 

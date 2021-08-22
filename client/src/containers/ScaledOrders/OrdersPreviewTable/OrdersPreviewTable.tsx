@@ -4,11 +4,12 @@ import OrdersTable from './orders-table';
 import DetailsTable from './details-table';
 import styles from './OrdersPreviewTable.module.scss';
 import {SCALED_CONTAINER} from 'data-test-ids';
-import {useReduxSelector} from 'redux/helpers/hookHelpers';
 import {SYMBOL} from 'redux/api/bitmex/types';
+import {useSelector} from 'react-redux';
+import {AppState} from 'redux/modules/state';
 
 export default function OrdersPreviewTable() {
-  const {orders} = useReduxSelector('orders');
+  const orders = useSelector((state: AppState) => state.preview.orders);
 
   return (
     <Container

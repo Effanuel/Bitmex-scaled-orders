@@ -3,6 +3,7 @@ import {defaultState as previewDefaultState} from 'redux/modules/preview/preview
 import {defaultState as trailingDefaultState} from 'redux/modules/trailing/trailingModule';
 import {defaultState as crossDefaultState} from 'redux/modules/cross/crossModule';
 import {defaultState as ordersDefaultState} from 'redux/modules/orders/ordersModule';
+import {defaultState as settingsDefaultState} from 'redux/modules/settings/settingsModule';
 import {WebsocketState} from 'redux/modules/websocket/types';
 import {PreviewState} from 'redux/modules/preview/types';
 import {TrailingState} from 'redux/modules/trailing/types';
@@ -11,12 +12,17 @@ import {RegularOrder, ScaledOrder} from 'utils';
 import {CrossState} from 'redux/modules/cross/types';
 import {Instrument} from 'redux/api/bitmex/types';
 import {OrdersState} from 'redux/modules/orders/types';
+import {Exchange, SettingsState} from 'redux/modules/settings/types';
 
-export const mockWebsocketState = (overrides?: Partial<WebsocketState>) => ({...websocketDefaultState, ...overrides});
+export const mockWebsocketState = (overrides?: Partial<WebsocketState['bitmex']>) => ({
+  ...websocketDefaultState,
+  [Exchange.BitMeX]: {...websocketDefaultState['bitmex'], ...overrides},
+});
 export const mockPreviewState = (overrides?: Partial<PreviewState>) => ({...previewDefaultState, ...overrides});
 export const mockTrailingState = (overrides?: Partial<TrailingState>) => ({...trailingDefaultState, ...overrides});
 export const mockCrossState = (overrides?: Partial<CrossState>) => ({...crossDefaultState, ...overrides});
 export const mockOrdersState = (overrides?: Partial<OrdersState>) => ({...ordersDefaultState, ...overrides});
+export const mockSettingsState = (overrides?: Partial<SettingsState>) => ({...settingsDefaultState, ...overrides});
 
 export const mockCreateOrder = (overrides?: Partial<RegularOrder>): RegularOrder => ({
   symbol: SYMBOL.ETHUSD,

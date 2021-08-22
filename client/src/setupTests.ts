@@ -15,7 +15,16 @@ jest.mock('react-toastify', () => {
 global.flushPromises = flushPromises;
 
 jest.mock('./redux/api/api', () => {
+  const BasicAPI = require('./tests/proxy').networkProxy.setNetworkTarget(
+    jest.requireActual('./redux/api/api').BasicAPI,
+    require('./tests/proxy').basicTracker,
+  );
   return {
-    API: require('./tests/proxy').networkProxy.setNetworkTarget(jest.requireActual('./redux/api/api').API),
+    basicApi: new BasicAPI(),
+    ExchangeAPIFacade: require('./tests/proxy').networkProxy.setNetworkTarget(
+      jest.requireActual('./redux/api/api').ExchangeAPIFacade,
+      require('./tests/proxy').tracker,
+    ),
+    BasicAPI,
   };
 });

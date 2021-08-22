@@ -1,15 +1,16 @@
 import React from 'react';
-import {useDispatch} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import {Box, Tooltip} from '@chakra-ui/react';
 import {WarningTwoIcon, WarningIcon} from '@chakra-ui/icons';
 import OrdersPreviewTable from './OrdersPreviewTable/OrdersPreviewTable';
-import {previewOrders, previewToggle, postOrderBulk} from 'redux/modules/preview/previewModule';
+import {previewOrders, previewToggle} from 'redux/modules/preview/previewModule';
 import {InputField, SelectDropdown, MainContainer, Button, SideRadioButtons, Row} from 'components';
 import DistributionsRadioGroup from './DistributionsRadioGroup';
 import {createScaledOrders, DISTRIBUTION, INSTRUMENT_PARAMS} from 'utils';
 import {SIDE, SYMBOL} from 'redux/api/bitmex/types';
 import {SCALED_CONTAINER} from 'data-test-ids';
-import {useReduxSelector} from 'redux/helpers/hookHelpers';
+import {useAppContext} from 'general/hooks';
+import {AppState} from 'redux/modules/state';
 
 const icons = [{element: WarningTwoIcon, color: 'red', onHoverMessage: 'Minimum lotsize for XBT is 100'}];
 
@@ -36,8 +37,10 @@ const initialState: Readonly<ScaledContainerState> = {
 };
 
 export default React.memo(function ScaledContainer() {
+  const {api} = useAppContext();
   const dispatch = useDispatch();
-  const {showPreview, previewLoading} = useReduxSelector('showPreview', 'previewLoading');
+  const showPreview = useSelector((state: AppState) => state.preview.showPreview);
+  const previewLoading = useSelector((state: AppState) => state.preview.previewLoading);
 
   const [state, setState] = React.useState(initialState);
   const [isDirty, setDirty] = React.useState(false);
@@ -65,10 +68,10 @@ export default React.memo(function ScaledContainer() {
   const onOrderSubmit = React.useCallback((): void => {
     const {distribution, ...rest} = state as RequiredProperty<ScaledContainerState>;
     const ordersProps = {...rest, start: +rest.start, end: +rest.end, stop: rest.stop != undefined ? +rest.stop : 0};
-    dispatch(postOrderBulk(createScaledOrders({ordersProps, distribution})));
+    api.postOrderBulk({orders: createScaledOrders({ordersProps, distribution})});
     setState(initialState);
     setDirty(true);
-  }, [dispatch, state]);
+  }, [api, state]);
 
   const onPreviewOrders = React.useCallback((): void => {
     if (!isDirty) {

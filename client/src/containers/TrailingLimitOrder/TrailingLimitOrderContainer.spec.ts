@@ -6,13 +6,15 @@ import {partialInstrument, updateInstrument} from 'tests/websocketData/instrumen
 import {partialOrder} from 'tests/websocketData/order';
 import {forgeAmendOrder, forgeLimitOrder} from 'tests/responses';
 import {getState, openWebsocket, sendWebsocketMessage, storeActions} from 'tests/helpers';
-import {createRenderer} from 'tests/influnt';
+import {createMainRenderer} from 'tests/influnt';
 import {textOf, isDisabled, respond} from 'influnt';
 import {createMockedStore} from 'tests/mockStore';
+import {createMemoryHistory} from 'history';
+import {Exchange} from 'redux/modules/settings/types';
 
 const orderID = 'OrderId';
 
-const render = createRenderer(TrailingLimitOrderContainer, {extraArgs: () => createMockedStore()});
+const render = createMainRenderer(TrailingLimitOrderContainer, {passProps: {exchange: Exchange.BitMeX}});
 
 describe('TrailingLimitContainer', () => {
   const commonOrder = ({orderQty, price}: {orderQty: number; price: number}) => ({
@@ -48,7 +50,7 @@ describe('TrailingLimitContainer', () => {
       });
 
     expect(result).toEqual({
-      actions: ['REDUX_WEBSOCKET::OPEN', 'REDUX_WEBSOCKET::MESSAGE'],
+      actions: ['bitmex::OPEN', 'bitmex::MESSAGE'],
       isDisabled: true,
       submitButtonLabel: 'Submit order at 10,322.0',
     });
@@ -64,7 +66,21 @@ describe('TrailingLimitContainer', () => {
       instrument: [{symbol: SYMBOL.XBTUSD, askPrice: 501, bidPrice: 500.5}],
     });
 
-    const result = await render({extraArgs: createMockedStore({websocket})})
+    const result = await render({
+      extraArgs: {
+        store: createMockedStore({
+          websocket,
+          settings: {
+            activeExchange: Exchange.BitMeX,
+            activeApiKeys: {bitmex: true, bitmexTEST: false},
+            settingsLoading: false,
+            settingsError: '',
+            getAllApiKeysLoading: false,
+          },
+        }),
+        history: createMemoryHistory(),
+      },
+    })
       .inputText(TRAILING_LIMIT_CONTAINER.QUANTITY_INPUT, '200')
       .press(TRAILING_LIMIT_CONTAINER.SUBMIT_TRAILING_ORDER)
       .resolve(mock)
@@ -72,11 +88,7 @@ describe('TrailingLimitContainer', () => {
       .inspect({actions: storeActions(), trailing: getState('trailing')});
 
     expect(result).toEqual({
-      actions: [
-        'trailing/POST_TRAILING_ORDER/pending',
-        'trailing/POST_TRAILING_ORDER/fulfilled',
-        'REDUX_WEBSOCKET::MESSAGE',
-      ],
+      actions: ['trailing/POST_TRAILING_ORDER/pending', 'trailing/POST_TRAILING_ORDER/fulfilled', 'bitmex::MESSAGE'],
       network: [{limitOrder: [{orderQty: 200, price: 501, side: 'Sell', symbol: 'XBTUSD', text: 'best_order'}]}],
       toast: [{message: 'Trailing Order placed at 501', toastPreset: 'success'}],
       trailing: {
@@ -107,11 +119,11 @@ describe('TrailingLimitContainer', () => {
 
     expect(result).toEqual({
       actions: [
-        'REDUX_WEBSOCKET::OPEN',
-        'REDUX_WEBSOCKET::MESSAGE',
+        'bitmex::OPEN',
+        'bitmex::MESSAGE',
         'trailing/POST_TRAILING_ORDER/pending',
         'trailing/POST_TRAILING_ORDER/fulfilled',
-        'REDUX_WEBSOCKET::MESSAGE',
+        'bitmex::MESSAGE',
         'trailing/__CLEAR_TRAILING_ORDER',
       ],
       network: [{limitOrder: [{orderQty: 200, price: 10322, side: 'Sell', symbol: 'XBTUSD', text: 'best_order'}]}],
@@ -149,12 +161,12 @@ describe('TrailingLimitContainer', () => {
 
     expect(result).toEqual({
       actions: [
-        'REDUX_WEBSOCKET::OPEN',
-        'REDUX_WEBSOCKET::MESSAGE',
+        'bitmex::OPEN',
+        'bitmex::MESSAGE',
         'trailing/POST_TRAILING_ORDER/pending',
         'trailing/POST_TRAILING_ORDER/fulfilled',
-        'REDUX_WEBSOCKET::MESSAGE',
-        'REDUX_WEBSOCKET::MESSAGE',
+        'bitmex::MESSAGE',
+        'bitmex::MESSAGE',
         'trailing/PUT_TRAILING_ORDER/pending',
         'trailing/PUT_TRAILING_ORDER/fulfilled',
       ],

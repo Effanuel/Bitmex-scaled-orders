@@ -14,40 +14,24 @@ import {
   groupedOrdersSelector,
 } from 'redux/selectors';
 import {AppState} from 'redux/modules/state';
+import {Exchange} from 'redux/modules/settings/types';
 
-type States = UnionToIntersection<ValueOf<AppState>>;
+type Selectors = ReturnType<typeof buildSelectors>;
 
-interface Selectors extends States {
-  wsCurrentPrice: ReturnType<typeof websocketCurrentPrice>;
-  wsTrailingPrice: ReturnType<typeof websocketTrailingPriceSelector>;
-  wsCrossPrice: ReturnType<typeof websocketCrossPriceSelector>;
-  wsBidAskPrices: ReturnType<typeof websocketBidAskPrices>;
-  allPrices: ReturnType<typeof allWebsocketBidAskPrices>;
-  averagePrice: ReturnType<typeof ordersAverageEntrySelector>;
-  riskBTC: ReturnType<typeof ordersRiskSelector>;
-  riskPerc: ReturnType<typeof ordersRiskPercSelector>;
-  status: ReturnType<typeof trailingOrderStatusSelector>;
-  hasCrossedOnce: ReturnType<typeof hasCrossedOnceSelector>;
-  hasCrossedSecondTime: ReturnType<typeof hasCrossedSecondTimeSelector>;
-  groupedOrders: ReturnType<typeof groupedOrdersSelector>;
-  wsLoading: boolean;
-  wsMessage: any;
-}
-
-const buildSelectors = (state: AppState): Selectors => {
-  const {trailing, preview, websocket, cross, orders} = state;
+const buildSelectors = (state: AppState, exchange: Exchange) => {
+  const {trailing, preview, websocket, cross, orders, settings} = state;
   return {
-    wsCurrentPrice: websocketCurrentPrice(state),
-    wsTrailingPrice: websocketTrailingPriceSelector(state),
-    wsCrossPrice: websocketCrossPriceSelector(state),
-    wsBidAskPrices: websocketBidAskPrices(state),
-    allPrices: allWebsocketBidAskPrices(state),
+    wsCurrentPrice: websocketCurrentPrice(state, exchange),
+    wsTrailingPrice: websocketTrailingPriceSelector(state, exchange),
+    wsCrossPrice: websocketCrossPriceSelector(state, exchange),
+    wsBidAskPrices: websocketBidAskPrices(state, exchange),
+    allPrices: allWebsocketBidAskPrices(state, exchange),
     averagePrice: ordersAverageEntrySelector(state),
     riskBTC: ordersRiskSelector(state),
     riskPerc: ordersRiskPercSelector(state),
-    status: trailingOrderStatusSelector(state),
-    hasCrossedOnce: hasCrossedOnceSelector(state),
-    hasCrossedSecondTime: hasCrossedSecondTimeSelector(state),
+    status: trailingOrderStatusSelector(state, exchange),
+    hasCrossedOnce: hasCrossedOnceSelector(state, exchange),
+    hasCrossedSecondTime: hasCrossedSecondTimeSelector(state, exchange),
     groupedOrders: groupedOrdersSelector(state),
 
     trailOrderId: trailing.trailOrderId,
@@ -69,24 +53,30 @@ const buildSelectors = (state: AppState): Selectors => {
     showPreview: preview.showPreview,
     previewLoading: preview.previewLoading,
 
-    __keys: websocket.__keys,
-    connected: websocket.connected,
-    instrument: websocket.instrument,
-    order: websocket.order,
-    wsLoading: websocket.wsLoading,
-    wsMessage: websocket.message,
+    __keys: websocket[exchange].__keys,
+    connected: websocket[exchange].connected,
+    instrument: websocket[exchange].instrument,
+    order: websocket[exchange].order,
+    wsLoading: websocket[exchange].wsLoading,
+    wsMessage: websocket[exchange].message,
 
     openOrders: orders.openOrders,
     ordersError: orders.ordersError,
     ordersLoading: orders.ordersLoading,
     profitOrders: orders.profitOrders,
     profitOrdersInAction: orders.profitOrdersInAction,
+
+    activeApiKeys: settings.activeApiKeys,
+    settingsError: settings.settingsError,
+    settingsLoading: settings.settingsLoading,
+    activeExchange: settings.activeExchange,
+    getAllApiKeysLoading: settings.getAllApiKeysLoading,
   };
 };
 
-export function useReduxSelector<K extends keyof Selectors>(...keys: K[]): Pick<Selectors, K> {
+export function useReduxSelector<K extends keyof Selectors>(exchange: Exchange, ...keys: K[]): Pick<Selectors, K> {
   const selector = useSelector((state: AppState) => {
-    const builtSelectors = buildSelectors(state);
+    const builtSelectors = buildSelectors(state, exchange);
     return keys.reduce(
       (availableSelectors: Pick<Selectors, K>, selectorKey: K) => (
         (availableSelectors[selectorKey] = builtSelectors[selectorKey]), availableSelectors

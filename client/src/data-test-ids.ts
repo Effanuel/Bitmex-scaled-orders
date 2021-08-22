@@ -35,6 +35,11 @@ export const OPEN_ORDERS_CONTAINER = {
   ADD_PROFIT: 'OpenOrdersContainer.addProfit',
 };
 
+export const ADD_API_KEYS_MODAL = {
+  API_KEY: 'AddApiKeysModal.ApiKey',
+  API_SECRET: 'AddApiKeysModal.ApiSecret',
+};
+
 export const ADD_ORDER_MODAL = {
   PRICE: 'AddOrderModal.price',
   QUANTITY: 'AddOrderModal.quantity',
@@ -58,6 +63,16 @@ export const CROSS_ORDER_CONTAINER = {
   PRICE_INPUT: 'CrossOrderContainer.priceInput',
   CANCEL_ORDER: 'CrossOrderContainer.cancelOrder',
   SIDE: 'CrossOrderContainer.side',
+};
+
+export const SETTINGS = {
+  API_KEY_ROW_STATUS: 'Settings.ApiKeyRowStatus',
+  API_KEY_ROW: 'Settings.ApiKeyRow',
+};
+
+export const HOME = {
+  ROW: 'Home.Row',
+  ICON: 'Home.Icon',
 };
 
 export const GLOBAL = {

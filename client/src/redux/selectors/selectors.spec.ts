@@ -22,23 +22,28 @@ import {
   mockTrailingState,
   mockCrossState,
   mockOrdersState,
+  mockSettingsState,
 } from 'tests/mockData/orders';
 import {AppState} from 'redux/modules/state';
+import {Exchange} from 'redux/modules/settings/types';
 
 describe('Selectors', () => {
+  const exchange = Exchange.BitMeX;
+
   const mockState: AppState = {
     websocket: mockWebsocketState({instrument: mockInstrumentData as Instrument[]}),
     preview: mockPreviewState({orders: mockScaledOrders, balance: 12_345_678_993_321, showPreview: true}),
     trailing: mockTrailingState({trailOrderSide: SIDE.SELL, trailOrderSymbol: SYMBOL.XBTUSD}),
     cross: mockCrossState(),
     orders: mockOrdersState(),
+    settings: mockSettingsState(),
   };
 
   let result: unknown;
 
   describe('websocketBidAskPrices', () => {
     it('should return askPrice of current symbol', () => {
-      const instrument = table_instrument(mockState);
+      const instrument = table_instrument(mockState, exchange);
       const wsSymbol = getTrailingOrderSymbol(mockState);
       const result = websocketBidAskPrices.resultFunc(instrument, wsSymbol);
       expect(result!.askPrice).toEqual(8011);
@@ -51,7 +56,7 @@ describe('Selectors', () => {
         websocket: {...mockState.websocket},
         trailing: {...mockState.trailing, trailOrderSymbol: 'HELLO' as SYMBOL},
       };
-      const instrument = table_instrument(payload);
+      const instrument = table_instrument(payload, exchange);
       const wsSymbol = getTrailingOrderSymbol(payload);
       const result = websocketBidAskPrices.resultFunc(instrument, wsSymbol);
       expect(result).toEqual(undefined);
@@ -82,7 +87,7 @@ describe('Selectors', () => {
 
   describe('websocketTrailingPriceSelector', () => {
     function validateTrailingPrice(symbol: SYMBOL, side: SIDE) {
-      const instrument = table_instrument(mockState);
+      const instrument = table_instrument(mockState, exchange);
       const bidAskPrices = websocketBidAskPrices.resultFunc(instrument, symbol);
       return websocketTrailingPriceSelector.resultFunc(bidAskPrices, side, symbol);
     }

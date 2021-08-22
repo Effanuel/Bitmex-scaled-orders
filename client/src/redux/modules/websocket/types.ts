@@ -10,6 +10,7 @@ import {
   WEBSOCKET_ERROR,
 } from '@giantmachines/redux-websocket';
 import {Instrument, Order} from '../../api/bitmex/types';
+import {Exchange} from '../settings/types';
 
 type CreateNoPayloadAction<T> = Action<T>;
 
@@ -32,13 +33,15 @@ export type WebsocketActions = CreateAction<typeof FETCH_ORDERS, any>;
 
 export type ReduxWebsocketMessage = CreateAction<typeof REDUX_WEBSOCKET_MESSAGE, any>;
 
-export interface WebsocketState extends Tables {
-  __keys: Keys;
-  connected: boolean;
-  wsLoading: boolean;
-  message?: string;
-  error: string;
-}
+export type WebsocketState = {
+  [exchange in Exchange]: Tables & {
+    __keys: Keys;
+    connected: boolean;
+    wsLoading: boolean;
+    message?: string;
+    error: string;
+  };
+};
 
 export enum RESPONSE_ACTIONS {
   PARTIAL = 'partial',

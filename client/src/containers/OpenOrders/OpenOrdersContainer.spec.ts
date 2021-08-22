@@ -2,14 +2,13 @@ import {OpenOrdersContainer} from 'containers';
 import {ADD_ORDER_MODAL, GLOBAL, OPEN_ORDERS_CONTAINER} from 'data-test-ids';
 import {SIDE, SYMBOL} from 'redux/api/bitmex/types';
 import {builderProfitOrder, buildOrder} from 'tests/builders';
-import {createRenderer} from 'tests/influnt';
+import {createMainRenderer} from 'tests/influnt';
 import {countOf, exists, respond} from 'influnt';
 import {forgeOpenOrders, forgeOrderCancel, forgeOrderCancelAll, forgeProfitTargetOrder} from 'tests/responses';
-import {createMockedStore} from 'tests/mockStore';
 import {createProfitTarget} from 'utils';
 import {getState, storeActions} from 'tests/helpers';
 
-const render = createRenderer(OpenOrdersContainer, {extraArgs: () => createMockedStore()});
+const render = createMainRenderer(OpenOrdersContainer);
 
 describe('OpenOrders', () => {
   it('should show empty cta when there are no open orders', async () => {
@@ -56,15 +55,15 @@ describe('OpenOrders', () => {
   });
 
   it('should cancel an open order', async () => {
-    const orderID1 = 'OrderID1';
+    const orderID = 'OrderID1';
 
     const [getOpenOrdersPromise, orderCancelPromise] = [
-      respond('getOpenOrders', [undefined]).with(forgeOpenOrders([buildOrder({orderID: orderID1}), buildOrder()])),
-      respond('orderCancel', [{orderID: [orderID1]}]).with(forgeOrderCancel([{orderID: orderID1}])),
+      respond('getOpenOrders', [undefined]).with(forgeOpenOrders([buildOrder({orderID}), buildOrder()])),
+      respond('orderCancel', [{orderID: [orderID]}]).with(forgeOrderCancel([{orderID}])),
     ];
 
     const result = await render({mocks: [getOpenOrdersPromise]})
-      .press(`${OPEN_ORDERS_CONTAINER.CANCEL}.${orderID1}`)
+      .press(`${OPEN_ORDERS_CONTAINER.CANCEL}.${orderID}`)
       .press(GLOBAL.MODAL_CONFIRM)
       .inspect({orderRowCountBefore: countOf(OPEN_ORDERS_CONTAINER.ORDER_ROW)})
       .resolve(orderCancelPromise)
@@ -81,7 +80,8 @@ describe('OpenOrders', () => {
         'orders/CANCEL_ORDER/pending',
         'orders/CANCEL_ORDER/fulfilled',
       ],
-      network: [{getOpenOrders: [undefined]}, {orderCancel: [{orderID: ['OrderID1']}]}],
+      network: [{getOpenOrders: [undefined]}, {orderCancel: [{orderID: [orderID]}]}],
+      modal: [{showCancelOrder: {orderID}}],
       emptyCtaVisible: false,
       orderRowCountBefore: 2,
       orderRowCountAfter: 1,
@@ -123,6 +123,7 @@ describe('OpenOrders', () => {
         'orders/CANCEL_ALL_ORDERS/pending',
         'orders/CANCEL_ALL_ORDERS/fulfilled',
       ],
+      modal: [{showCancelAllOrders: {totalOrders: 2}}],
       emptyCtaVisible: true,
       orderRowCountBefore: 1,
       orderRowCountAfter: 0,
@@ -135,11 +136,10 @@ describe('OpenOrders', () => {
     const profitOrderID1 = 'ProfitOrderID1';
 
     const order = buildOrder({orderID: orderID1});
+    const profitOrder = builderProfitOrder({orderID: orderID1, profitOrderID: profitOrderID1});
 
     const [getOpenOrdersPromise, orderCancelPromise] = [
-      respond('getOpenOrders', [undefined]).with(
-        forgeOpenOrders([order, builderProfitOrder({orderID: orderID1, profitOrderID: profitOrderID1})]),
-      ),
+      respond('getOpenOrders', [undefined]).with(forgeOpenOrders([order, profitOrder])),
       respond('orderCancel', [{orderID: profitOrderID1}]).with(forgeOrderCancel([{orderID: profitOrderID1}])),
     ];
 
@@ -167,6 +167,17 @@ describe('OpenOrders', () => {
       emptyCtaVisible: false,
       orderRowCountAfter: 1,
       orderRowCountBefore: 1,
+      modal: [
+        {
+          showCancelProfitOrder: {
+            orderID: 'ProfitOrderID1',
+            price: profitOrder.price,
+            quantity: profitOrder.orderQty,
+            side: profitOrder.side,
+            symbol: profitOrder.symbol,
+          },
+        },
+      ],
       orders: {
         openOrders: [order],
         ordersError: '',
@@ -179,7 +190,7 @@ describe('OpenOrders', () => {
 
   it('should cancel all profit orders of one of the open order`s', async () => {
     const orderID1 = 'OrderID1';
-    const profitOrderIDs = ['ProfitOrderID1', 'ProfitOrderID2', 'ProfitOrderID3'];
+    const profitOrderIds = ['ProfitOrderID1', 'ProfitOrderID2', 'ProfitOrderID3'];
 
     const order = buildOrder({orderID: orderID1});
 
@@ -187,12 +198,12 @@ describe('OpenOrders', () => {
       respond('getOpenOrders', [undefined]).with(
         forgeOpenOrders([
           order,
-          builderProfitOrder({orderID: orderID1, profitOrderID: profitOrderIDs[0]}),
-          builderProfitOrder({orderID: orderID1, profitOrderID: profitOrderIDs[1]}),
-          builderProfitOrder({orderID: orderID1, profitOrderID: profitOrderIDs[2]}),
+          builderProfitOrder({orderID: orderID1, profitOrderID: profitOrderIds[0]}),
+          builderProfitOrder({orderID: orderID1, profitOrderID: profitOrderIds[1]}),
+          builderProfitOrder({orderID: orderID1, profitOrderID: profitOrderIds[2]}),
         ]),
       ),
-      respond('orderCancel', [{orderID: profitOrderIDs}]).with(forgeOrderCancel([{orderID: profitOrderIDs}])),
+      respond('orderCancel', [{orderID: profitOrderIds}]).with(forgeOrderCancel([{orderID: profitOrderIds}])),
     ];
 
     const result = await render({mocks: [getOpenOrdersPromise]})
@@ -215,10 +226,11 @@ describe('OpenOrders', () => {
         'orders/CANCEL_ALL_PROFIT_ORDERS/pending',
         'orders/CANCEL_ALL_PROFIT_ORDERS/fulfilled',
       ],
-      network: [{getOpenOrders: [undefined]}, {orderCancel: [{orderID: profitOrderIDs}]}],
+      network: [{getOpenOrders: [undefined]}, {orderCancel: [{orderID: profitOrderIds}]}],
       emptyCtaVisible: false,
       orderRowCountAfter: 1,
       orderRowCountBefore: 1,
+      modal: [{showCancelAllProfitOrders: {profitOrderIds, totalOrders: 3}}],
       orders: {
         openOrders: [order],
         ordersError: '',
@@ -264,6 +276,7 @@ describe('OpenOrders', () => {
         'orders/CANCEL_ORDER/pending',
         'orders/CANCEL_ORDER/fulfilled',
       ],
+      modal: [{showCancelOrder: {orderID: 'OrderID1'}}],
       network: [{getOpenOrders: [undefined]}, {orderCancel: [{orderID: ['OrderID1', 'ProfitOrderID1']}]}],
       emptyCtaVisible: true,
       orderRowCountAfter: 0,
@@ -324,6 +337,7 @@ describe('OpenOrders', () => {
           ],
         },
       ],
+      modal: [{showAddProfitTarget: {orderID: 'OrderID1'}}],
       emptyCtaVisible: false,
       orderRowCountAfter: 1,
       orderRowCountBefore: 1,
@@ -402,6 +416,7 @@ describe('OpenOrders', () => {
           ],
         },
       ],
+      modal: [{showAddProfitTarget: {orderID: 'OrderID1'}}],
       emptyCtaVisible: false,
       orderRowCountAfter: 1,
       orderRowCountBefore: 1,
